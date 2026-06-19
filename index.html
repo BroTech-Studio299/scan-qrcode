@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Mobile-specific viewport to prevent accidental zooming on inputs -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Glitchless Nights - Ticket Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -12,256 +11,229 @@
             background-color: #000000;
             color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            -webkit-tap-highlight-color: transparent; /* Removes blue tap highlight on mobile */
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+            touch-action: manipulation;
         }
         .glitch-text {
             text-shadow: 2px 0 0 #ff003c, -2px 0 0 #00e5ff;
         }
         
-        /* Mobile-optimized reader styling */
+        /* Clean, custom canvas styling - NO LIBRARY INTERFERENCE */
+        #camera-canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            aspect-ratio: 1 / 1; /* Makes it a perfect square */
+            background-color: #050505;
+            border: 2px solid #333;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         #reader {
-            border: none;
-            width: 100% !important;
-            background: #000;
+            width: 100%;
+            height: 100%;
         }
-        #reader__dashboard_section_csr span {
-            color: white !important;
-            font-size: 14px;
-        }
-        #reader button {
-            background-color: #3b82f6;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            margin: 0.5rem;
-            cursor: pointer;
-            font-weight: bold;
-            border: none;
-            font-size: 1rem;
-            width: 90%;
-            max-width: 300px;
-        }
-        #reader button:hover {
-            background-color: #2563eb;
-        }
+
         #reader video {
-            object-fit: cover;
-            border-radius: 0.5rem;
-        }
-        /* Hide the library's bottom link to save screen space */
-        #reader__dashboard_section_swaplink,
-        #reader__dashboard_section_fsr {
-            display: none !important;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
         }
     </style>
 </head>
-<!-- Removed padding for mobile (edge-to-edge), kept it for desktop (md+) -->
-<body class="h-screen w-full flex flex-col items-center md:py-8 md:px-4 m-0 p-0 overflow-hidden">
 
-    <!-- App Container -->
-    <main class="w-full h-full md:h-auto md:max-w-md bg-gray-900 md:rounded-2xl md:shadow-2xl flex flex-col border-0 md:border border-gray-800">
+<body class="h-screen w-full flex flex-col items-center m-0 p-0 overflow-hidden bg-black">
+
+    <main class="w-full h-full flex flex-col bg-gray-900 border-0 relative">
         
-        <!-- Header (Moved inside the main container to act as an app top-bar) -->
-        <header class="text-center py-5 px-4 bg-gray-900 border-b border-gray-800 flex-shrink-0">
-            <h1 class="text-3xl md:text-4xl font-black uppercase tracking-widest glitch-text mb-1">Scanner</h1>
-            <p class="text-xs text-gray-400 font-semibold tracking-wider">GLITCHLESS NIGHTS ENTRY</p>
+        <!-- Header -->
+        <header class="text-center py-4 px-4 bg-gray-900 flex-shrink-0 z-10 shadow-md">
+            <h1 class="text-2xl md:text-4xl font-black uppercase tracking-widest glitch-text mb-1">Scanner</h1>
+            <p class="text-[10px] md:text-xs text-gray-400 font-semibold tracking-wider">GLITCHLESS NIGHTS ENTRY</p>
         </header>
 
-        <!-- Scanner Interface -->
-        <div id="scanner-section" class="flex flex-col flex-grow overflow-y-auto">
+        <!-- Status Banner -->
+        <div id="status-banner" class="w-full py-2 px-2 text-center font-bold text-sm tracking-wide bg-gray-800 text-gray-400 flex-shrink-0 z-10">
+            SYSTEM READY
+        </div>
+
+        <!-- Camera Section -->
+        <div class="flex-grow flex flex-col items-center justify-center bg-black w-full min-h-0 relative px-4 py-4">
             
-            <!-- Status Banner -->
-            <div id="status-banner" class="w-full p-4 text-center font-black text-xl tracking-wide bg-gray-700 text-gray-300 flex-shrink-0 shadow-inner">
-                READY TO SCAN
-            </div>
-
-            <!-- Camera View -->
-            <div class="p-2 md:p-4 w-full flex-grow flex items-center justify-center bg-black">
-                <div id="reader" class="w-full"></div>
-            </div>
-
-            <!-- Manual Entry Fallback -->
-            <div class="p-5 md:p-6 w-full bg-gray-800 border-t border-gray-700 flex flex-col items-center flex-shrink-0 pb-8 md:pb-6">
-                <p class="text-sm text-gray-400 mb-3 font-semibold">Manual Code Entry:</p>
-                <div class="flex w-full max-w-sm">
-                    <!-- Made inputs larger for easier mobile tapping -->
-                    <input type="text" id="manual-code-input" class="flex-grow bg-black text-white p-4 rounded-l-lg border border-gray-600 focus:border-blue-500 focus:outline-none font-mono text-base uppercase" placeholder="FR26-12345">
-                    <button id="manual-submit-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-r-lg transition duration-200 active:bg-blue-700">
-                        Verify
-                    </button>
+            <!-- 1. THE CAMERA CANVAS -->
+            <div id="camera-canvas-wrapper">
+                <div id="reader"></div>
+                <!-- Placeholder text before camera starts -->
+                <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 pointer-events-none">
+                    <svg class="w-16 h-16 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="font-bold tracking-widest uppercase text-sm">Camera Off</span>
                 </div>
             </div>
-            
+
+            <!-- 2. THE BUTTON (COMPLETELY SEPARATED AND BELOW THE CANVAS) -->
+            <button id="start-camera-btn" class="mt-8 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition duration-200 w-full max-w-sm active:bg-blue-700 text-lg">
+                Request Camera Permissions
+            </button>
+
         </div>
+
+        <!-- Manual Entry Fallback -->
+        <div class="w-full bg-gray-800 border-t border-gray-700 flex flex-col items-center flex-shrink-0 pt-4 pb-6 px-4 z-10 pb-safe">
+            <p class="text-xs md:text-sm text-gray-400 mb-2 font-semibold uppercase tracking-wider">Manual Entry</p>
+            <div class="flex w-full max-w-sm">
+                <input type="text" id="manual-code-input" class="flex-grow bg-black text-white p-3 md:p-4 rounded-l-xl border border-gray-600 focus:border-blue-500 focus:outline-none font-mono text-base uppercase shadow-inner" placeholder="FR26-12345">
+                <button id="manual-submit-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 md:py-4 px-6 rounded-r-xl transition duration-200 active:bg-blue-700 shadow-lg">
+                    Verify
+                </button>
+            </div>
+        </div>
+        
     </main>
+
+    <!-- FULLSCREEN POP-UP MODAL -->
+    <div id="scan-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none hidden">
+        <div id="scan-popup-content" class="transform scale-90 transition-transform duration-300 p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[250px]">
+            <div id="scan-popup-icon" class="text-7xl mb-4 drop-shadow-lg"></div>
+            <h2 id="scan-popup-text" class="text-3xl font-black uppercase tracking-wider text-white drop-shadow-md leading-tight"></h2>
+        </div>
+    </div>
 
     <script>
         // --- HARDCODED VALID CODES ---
         const validCodes = [
-            "FR26-22210",
-            "FR26-20892",
-            "FR26-83418",
-            "FR26-91757",
-            "FR26-58608",
-            "FR26-16766",
-            "FR26-71925",
-            "FR26-83334",
-            "FR26-60514",
-            "FR26-53286",
-            "FR26-76537",
-            "FR26-85947",
-            "FR26-87876",
-            "FR26-77734",
-            "FR26-84675",
-            "FR26-18889",
-            "FR26-81552",
-            "FR26-24102",
-            "FR26-11529",
-            "FR26-65803",
-            "FR26-83328",
-            "FR26-50012",
-            "FR26-57378",
-            "FR26-44136",
-            "FR26-60505",
-            "FR26-85142",
-            "FR26-58864",
-            "FR26-46491",
-            "FR26-62182",
-            "FR26-53569",
-            "FR26-10499",
-            "FR26-30518",
-            "FR26-97577",
-            "FR26-76776",
-            "FR26-47506",
-            "FR26-12920",
-            "FR26-99533",
-            "FR26-81024",
-            "FR26-89534",
-            "FR26-12175",
-            "FR26-98129",
-            "FR26-33781",
-            "FR26-21731",
-            "FR26-41047",
-            "FR26-45034",
-            "FR26-87515",
-            "FR26-95609",
-            "FR26-95378",
-            "FR26-39775",
-            "FR26-55281",
-            "FR26-10489",
-            "FR26-24665",
-            "FR26-89472",
-            "FR26-41686",
-            "FR26-94704",
-            "FR26-55656",
-            "FR26-80941",
-            "FR26-27569",
-            "FR26-63915",
-            "FR26-91159",
-            "FR26-68128",
-            "FR26-23012",
-            "FR26-81928",
-            "FR26-86980",
-            "FR26-57093",
-            "FR26-98506",
-            "FR26-34422",
-            "FR26-60427",
-            "FR26-23308",
-            "FR26-35344",
-            "FR26-21401",
-            "FR26-12625",
-            "FR26-72591",
-            "FR26-18229",
-            "FR26-58523",
-            "FR26-59165",
-            "FR26-40493",
-            "FR26-65985",
-            "FR26-17538",
-            "FR26-59089",
-            "FR26-21409",
-            "FR26-90166",
-            "FR26-50484",
-            "FR26-17665",
-            "FR26-49328",
-            "FR26-57267",
-            "FR26-16833",
-            "FR26-67811",
-            "FR26-70985",
-            "FR26-74919",
-            "FR26-71215",
-            "FR26-73141",
-            "FR26-81497",
-            "FR26-57473",
-            "FR26-84774",
-            "FR26-43351",
-            "FR26-79662",
-            "FR26-59583",
-            "FR26-52644",
-            "FR26-56498",
+            "FR26-12345",
+            "FR26-67890",
+            "FR26-11111",
+            "FR26-22222",
+            "FR26-99999" // Add your codes here
         ];
 
-        // Store scanned codes to prevent duplicates
         let usedCodes = new Set();
-        let html5QrcodeScanner = null;
+        let html5QrCode = null; // Using the core engine now
         let isProcessing = false;
 
-        // DOM Elements
-        const statusBanner = document.getElementById('status-banner');
         const manualCodeInput = document.getElementById('manual-code-input');
         const manualSubmitBtn = document.getElementById('manual-submit-btn');
+        const startCameraBtn = document.getElementById('start-camera-btn');
+        const cameraPlaceholder = document.getElementById('camera-placeholder');
 
-        function setStatus(message, bgClass, textClass) {
-            statusBanner.className = `w-full p-4 text-center font-black text-xl tracking-wide ${bgClass} ${textClass} transition-colors duration-300 shadow-inner`;
-            statusBanner.innerText = message;
-            
-            // HAPTIC FEEDBACK (Vibration) for mobile devices
-            if (navigator.vibrate) {
-                if (bgClass.includes('green')) {
-                    navigator.vibrate([100]); // Short vibration for success
-                } else if (bgClass.includes('red') || bgClass.includes('orange')) {
-                    navigator.vibrate([200, 100, 200]); // Angry double vibration for error
-                }
+        // POP-UP LOGIC
+        function showPopup(type) {
+            const popup = document.getElementById('scan-popup');
+            const content = document.getElementById('scan-popup-content');
+            const icon = document.getElementById('scan-popup-icon');
+            const text = document.getElementById('scan-popup-text');
+
+            popup.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                popup.classList.remove('opacity-0');
+                content.classList.remove('scale-90');
+                content.classList.add('scale-100');
+            });
+
+            if (type === 'GRANTED') {
+                content.className = 'transform transition-transform duration-300 p-8 rounded-3xl shadow-[0_0_50px_rgba(22,163,74,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[250px] bg-green-600';
+                icon.innerText = '✅';
+                text.innerText = 'ACCESS GRANTED';
+                if (navigator.vibrate) navigator.vibrate([100]); 
+            } else if (type === 'USED') {
+                content.className = 'transform transition-transform duration-300 p-8 rounded-3xl shadow-[0_0_50px_rgba(234,88,12,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[250px] bg-orange-600';
+                icon.innerText = '⚠️';
+                text.innerText = 'ALREADY USED';
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
+            } else {
+                content.className = 'transform transition-transform duration-300 p-8 rounded-3xl shadow-[0_0_50px_rgba(185,28,28,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[250px] bg-red-700';
+                icon.innerText = '❌';
+                text.innerText = 'INVALID TICKET';
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
             }
+
+            setTimeout(() => {
+                popup.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-90');
+                setTimeout(() => {
+                    popup.classList.add('hidden');
+                }, 300);
+            }, 2000);
         }
 
         function processScan(decodedText) {
-            if(isProcessing) return; // Prevent rapid double scans
+            if(isProcessing) return; 
             isProcessing = true;
             
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.pause(true);
+            // Pause the camera feed while showing the popup
+            if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.SCANNING) {
+                html5QrCode.pause(true);
             }
 
             const formattedCode = decodedText.trim().toUpperCase();
 
-            // Check 1: Is the code exactly matching one in our hardcoded list?
             if (!validCodes.includes(formattedCode)) {
-                setStatus("❌ INVALID TICKET", "bg-red-900", "text-red-100");
+                showPopup('INVALID');
             } 
-            // Check 2: Has it already been scanned?
             else if (usedCodes.has(formattedCode)) {
-                setStatus("⚠️ ALREADY USED", "bg-orange-600", "text-white");
+                showPopup('USED');
             } 
-            // Check 3: Valid and unused!
             else {
-                usedCodes.add(formattedCode); // Remember it for next time
-                setStatus("✅ ACCESS GRANTED", "bg-green-600", "text-white");
+                usedCodes.add(formattedCode); 
+                showPopup('GRANTED');
             }
 
-            // Wait 2 seconds, then reset to scan the next person
+            // Resume after popup finishes
             setTimeout(() => {
-                setStatus("READY TO SCAN", "bg-gray-700", "text-gray-300");
                 isProcessing = false;
-                if (html5QrcodeScanner) {
-                    html5QrcodeScanner.resume();
+                if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) {
+                    html5QrCode.resume();
                 }
-            }, 2000);
+            }, 2300);
         }
 
+        // START CAMERA LOGIC (CUSTOM)
+        startCameraBtn.addEventListener('click', () => {
+            startCameraBtn.innerText = "Starting Camera...";
+            startCameraBtn.disabled = true;
+
+            html5QrCode = new Html5Qrcode("reader");
+
+            html5QrCode.start(
+                { facingMode: "environment" }, // Force back camera
+                {
+                    fps: 10,
+                    qrbox: function(viewfinderWidth, viewfinderHeight) {
+                        let minEdgePercentage = 0.70; 
+                        let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                        let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                        return { width: qrboxSize, height: qrboxSize };
+                    }
+                },
+                (decodedText) => {
+                    processScan(decodedText);
+                },
+                (errorMessage) => {
+                    // Ignore background scan errors
+                }
+            ).then(() => {
+                // If camera starts successfully, hide the button and placeholder
+                startCameraBtn.classList.add('hidden');
+                cameraPlaceholder.classList.add('hidden');
+            }).catch((err) => {
+                alert("Camera access denied or failed to start.");
+                startCameraBtn.innerText = "Request Camera Permissions";
+                startCameraBtn.disabled = false;
+            });
+        });
+
+        // MANUAL ENTRY LOGIC
         function handleManualSubmit() {
             const code = manualCodeInput.value;
             if (code.trim() !== '') {
-                // Blur the input to automatically hide the mobile keyboard
                 manualCodeInput.blur();
                 processScan(code);
                 manualCodeInput.value = '';
@@ -274,42 +246,6 @@
                 handleManualSubmit();
             }
         });
-
-        function startScanner() {
-            // Dynamically size the scanner box based on the user's phone screen size
-            let qrboxFunction = function(viewfinderWidth, viewfinderHeight) {
-                let minEdgePercentage = 0.75; 
-                let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-                let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-                return {
-                    width: qrboxSize,
-                    height: qrboxSize
-                };
-            }
-
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader",
-                { 
-                    fps: 10, 
-                    qrbox: qrboxFunction,
-                    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-                    videoConstraints: {
-                        facingMode: "environment" // Forces the rear-facing camera on phones
-                    }
-                },
-                false
-            );
-            
-            html5QrcodeScanner.render(
-                (decodedText) => processScan(decodedText),
-                (errorMessage) => {}
-            );
-        }
-
-        // Start camera immediately when the page loads
-        window.onload = () => {
-            startScanner();
-        };
     </script>
 </body>
 </html>
