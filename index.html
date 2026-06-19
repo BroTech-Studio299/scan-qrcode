@@ -288,11 +288,9 @@
             "FR26-39013",
             "FR26-11019",
             "FR26-82874",
-
         ];
 
         // --- CODES WITH FOOD / PREMIUM ACCESS ---
-        // Any code in this list (must also be in validCodes above) gets a "FOOD ACCESS" badge on scan.
         const foodAccessCodes = [
                 "FR26-31147",
                 "FR26-37718",
@@ -394,7 +392,6 @@
                 "FR26-21776",
                 "FR26-69993",
                 "FR26-63967",
-
         ];
 
         // --- PERSISTED "ALREADY USED" LIST (survives page refresh) ---
@@ -440,6 +437,7 @@
             const subtext = document.getElementById('scan-popup-subtext');
 
             popup.classList.remove('hidden');
+            popup.classList.remove('pointer-events-none');
             requestAnimationFrame(() => {
                 popup.classList.remove('opacity-0');
                 content.classList.remove('scale-90');
@@ -475,6 +473,7 @@
             popupContentEl.classList.add('scale-90');
             setTimeout(() => {
                 popupEl.classList.add('hidden');
+                popupEl.classList.add('pointer-events-none');
             }, 300);
 
             isProcessing = false;
@@ -502,8 +501,9 @@
             }
 
             const formattedCode = decodedText.trim().toUpperCase();
+            const isValid = validCodes.includes(formattedCode) || foodAccessCodes.includes(formattedCode);
 
-            if (!validCodes.includes(formattedCode)) {
+            if (!isValid) {
                 showPopup('INVALID');
             } 
             else if (usedCodes.has(formattedCode)) {
