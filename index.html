@@ -176,133 +176,268 @@
 
     <!-- FULLSCREEN POP-UP MODAL -->
     <div id="scan-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none hidden p-4">
-        <div id="scan-popup-content" class="transform scale-90 transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px]">
+        <div id="scan-popup-content" class="relative transform scale-90 transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px]">
+            <button id="scan-popup-close" aria-label="Close" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white text-xl font-bold flex items-center justify-center leading-none">&times;</button>
             <div id="scan-popup-icon" class="mb-4 drop-shadow-lg"></div>
             <h2 id="scan-popup-text" class="font-black uppercase tracking-wider text-white drop-shadow-md leading-tight"></h2>
+            <p id="scan-popup-subtext" class="mt-2 text-sm font-semibold text-white/90 tracking-wide uppercase"></p>
+            <p class="mt-4 text-xs text-white/70 font-medium">Tap anywhere to continue</p>
         </div>
     </div>
 
     <script>
         // --- HARDCODED VALID CODES ---
         const validCodes = [
-            "FR26-22210",
-            "FR26-20892",
-            "FR26-83418",
-            "FR26-91757",
-            "FR26-58608",
-            "FR26-16766",
-            "FR26-71925",
-            "FR26-83334",
-            "FR26-60514",
-            "FR26-53286",
-            "FR26-76537",
-            "FR26-85947",
-            "FR26-87876",
-            "FR26-77734",
-            "FR26-84675",
-            "FR26-18889",
-            "FR26-81552",
-            "FR26-24102",
-            "FR26-11529",
-            "FR26-65803",
-            "FR26-83328",
-            "FR26-50012",
-            "FR26-57378",
-            "FR26-44136",
-            "FR26-60505",
-            "FR26-85142",
-            "FR26-58864",
-            "FR26-46491",
-            "FR26-62182",
-            "FR26-53569",
-            "FR26-10499",
-            "FR26-30518",
-            "FR26-97577",
-            "FR26-76776",
-            "FR26-47506",
-            "FR26-12920",
-            "FR26-99533",
-            "FR26-81024",
-            "FR26-89534",
-            "FR26-12175",
-            "FR26-98129",
-            "FR26-33781",
-            "FR26-21731",
-            "FR26-41047",
-            "FR26-45034",
-            "FR26-87515",
-            "FR26-95609",
-            "FR26-95378",
-            "FR26-39775",
-            "FR26-55281",
-            "FR26-10489",
-            "FR26-24665",
-            "FR26-89472",
-            "FR26-41686",
-            "FR26-94704",
-            "FR26-55656",
-            "FR26-80941",
-            "FR26-27569",
-            "FR26-63915",
-            "FR26-91159",
-            "FR26-68128",
-            "FR26-23012",
-            "FR26-81928",
-            "FR26-86980",
-            "FR26-57093",
-            "FR26-98506",
-            "FR26-34422",
-            "FR26-60427",
-            "FR26-23308",
-            "FR26-35344",
-            "FR26-21401",
-            "FR26-12625",
-            "FR26-72591",
-            "FR26-18229",
-            "FR26-58523",
-            "FR26-59165",
-            "FR26-40493",
-            "FR26-65985",
-            "FR26-17538",
-            "FR26-59089",
-            "FR26-21409",
-            "FR26-90166",
-            "FR26-50484",
-            "FR26-17665",
-            "FR26-49328",
-            "FR26-57267",
-            "FR26-16833",
-            "FR26-67811",
-            "FR26-70985",
-            "FR26-74919",
-            "FR26-71215",
-            "FR26-73141",
-            "FR26-81497",
-            "FR26-57473",
-            "FR26-84774",
-            "FR26-43351",
-            "FR26-79662",
-            "FR26-59583",
-            "FR26-52644",
-            "FR26-56498",
+            "FR26-61503",
+            "FR26-23101",
+            "FR26-62897",
+            "FR26-45986",
+            "FR26-50257",
+            "FR26-71495",
+            "FR26-52875",
+            "FR26-33871",
+            "FR26-35056",
+            "FR26-83575",
+            "FR26-46250",
+            "FR26-94164",
+            "FR26-21284",
+            "FR26-42037",
+            "FR26-54893",
+            "FR26-80794",
+            "FR26-49419",
+            "FR26-83883",
+            "FR26-96539",
+            "FR26-69103",
+            "FR26-50073",
+            "FR26-35973",
+            "FR26-58243",
+            "FR26-11017",
+            "FR26-60880",
+            "FR26-20411",
+            "FR26-53442",
+            "FR26-47215",
+            "FR26-28891",
+            "FR26-28370",
+            "FR26-83019",
+            "FR26-41997",
+            "FR26-16808",
+            "FR26-44057",
+            "FR26-94946",
+            "FR26-41152",
+            "FR26-84752",
+            "FR26-82959",
+            "FR26-48217",
+            "FR26-92909",
+            "FR26-46693",
+            "FR26-90501",
+            "FR26-58279",
+            "FR26-97780",
+            "FR26-85160",
+            "FR26-75706",
+            "FR26-38972",
+            "FR26-98204",
+            "FR26-66368",
+            "FR26-12899",
+            "FR26-92968",
+            "FR26-70918",
+            "FR26-51803",
+            "FR26-54778",
+            "FR26-20850",
+            "FR26-80921",
+            "FR26-95600",
+            "FR26-29121",
+            "FR26-73970",
+            "FR26-70093",
+            "FR26-90702",
+            "FR26-87094",
+            "FR26-86929",
+            "FR26-30877",
+            "FR26-39622",
+            "FR26-70108",
+            "FR26-31691",
+            "FR26-98702",
+            "FR26-28427",
+            "FR26-12234",
+            "FR26-42690",
+            "FR26-26934",
+            "FR26-51510",
+            "FR26-25065",
+            "FR26-42987",
+            "FR26-26524",
+            "FR26-82068",
+            "FR26-44276",
+            "FR26-66989",
+            "FR26-81614",
+            "FR26-33175",
+            "FR26-12461",
+            "FR26-99322",
+            "FR26-79949",
+            "FR26-56909",
+            "FR26-22288",
+            "FR26-86955",
+            "FR26-70354",
+            "FR26-75311",
+            "FR26-43209",
+            "FR26-12373",
+            "FR26-96836",
+            "FR26-56328",
+            "FR26-37688",
+            "FR26-32261",
+            "FR26-71558",
+            "FR26-53690",
+            "FR26-39013",
+            "FR26-11019",
+            "FR26-82874",
 
         ];
 
-        let usedCodes = new Set();
+        // --- CODES WITH FOOD / PREMIUM ACCESS ---
+        // Any code in this list (must also be in validCodes above) gets a "FOOD ACCESS" badge on scan.
+        const foodAccessCodes = [
+                "FR26-31147",
+                "FR26-37718",
+                "FR26-10138",
+                "FR26-21186",
+                "FR26-95035",
+                "FR26-21443",
+                "FR26-11467",
+                "FR26-26498",
+                "FR26-87908",
+                "FR26-99410",
+                "FR26-78648",
+                "FR26-64532",
+                "FR26-72258",
+                "FR26-46047",
+                "FR26-92650",
+                "FR26-29846",
+                "FR26-71667",
+                "FR26-87432",
+                "FR26-94840",
+                "FR26-60922",
+                "FR26-43559",
+                "FR26-64579",
+                "FR26-39317",
+                "FR26-37159",
+                "FR26-61520",
+                "FR26-94608",
+                "FR26-96318",
+                "FR26-89492",
+                "FR26-42921",
+                "FR26-88396",
+                "FR26-92211",
+                "FR26-54014",
+                "FR26-30962",
+                "FR26-62508",
+                "FR26-44024",
+                "FR26-42182",
+                "FR26-24790",
+                "FR26-22872",
+                "FR26-76677",
+                "FR26-68245",
+                "FR26-21428",
+                "FR26-90376",
+                "FR26-43453",
+                "FR26-48838",
+                "FR26-99368",
+                "FR26-39149",
+                "FR26-39251",
+                "FR26-87126",
+                "FR26-45256",
+                "FR26-17590",
+                "FR26-10507",
+                "FR26-77431",
+                "FR26-91557",
+                "FR26-99758",
+                "FR26-18306",
+                "FR26-27430",
+                "FR26-67311",
+                "FR26-43258",
+                "FR26-50060",
+                "FR26-25815",
+                "FR26-69468",
+                "FR26-33669",
+                "FR26-18141",
+                "FR26-85769",
+                "FR26-15539",
+                "FR26-76660",
+                "FR26-84449",
+                "FR26-25892",
+                "FR26-93906",
+                "FR26-71848",
+                "FR26-35980",
+                "FR26-81411",
+                "FR26-50432",
+                "FR26-24705",
+                "FR26-74791",
+                "FR26-92910",
+                "FR26-23825",
+                "FR26-78467",
+                "FR26-93296",
+                "FR26-41635",
+                "FR26-81555",
+                "FR26-57280",
+                "FR26-61298",
+                "FR26-40656",
+                "FR26-15634",
+                "FR26-72298",
+                "FR26-75571",
+                "FR26-59432",
+                "FR26-95252",
+                "FR26-49795",
+                "FR26-87039",
+                "FR26-87798",
+                "FR26-60143",
+                "FR26-97097",
+                "FR26-60858",
+                "FR26-55480",
+                "FR26-28947",
+                "FR26-21776",
+                "FR26-69993",
+                "FR26-63967",
+
+        ];
+
+        // --- PERSISTED "ALREADY USED" LIST (survives page refresh) ---
+        const STORAGE_KEY = 'glitchless_used_codes';
+
+        function loadUsedCodes() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? new Set(JSON.parse(raw)) : new Set();
+            } catch (e) {
+                console.error('Could not read used codes from storage', e);
+                return new Set();
+            }
+        }
+
+        function saveUsedCodes() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(usedCodes)));
+            } catch (e) {
+                console.error('Could not save used codes to storage', e);
+            }
+        }
+
+        let usedCodes = loadUsedCodes();
         let html5QrCode = null; // Using the core engine now
-        let isProcessing = false;
+        let isProcessing = false; // true while a popup is open and waiting to be dismissed
 
         const manualCodeInput = document.getElementById('manual-code-input');
         const manualSubmitBtn = document.getElementById('manual-submit-btn');
         const startCameraBtn = document.getElementById('start-camera-btn');
         const cameraPlaceholder = document.getElementById('camera-placeholder');
 
-        // POP-UP LOGIC
-        function showPopup(type) {
-            const popup = document.getElementById('scan-popup');
-            const content = document.getElementById('scan-popup-content');
+        // POP-UP LOGIC (stays open until the user dismisses it)
+        const popupEl = document.getElementById('scan-popup');
+        const popupContentEl = document.getElementById('scan-popup-content');
+        const popupCloseBtn = document.getElementById('scan-popup-close');
+
+        function showPopup(type, hasFoodAccess) {
+            const popup = popupEl;
+            const content = popupContentEl;
             const icon = document.getElementById('scan-popup-icon');
             const text = document.getElementById('scan-popup-text');
+            const subtext = document.getElementById('scan-popup-subtext');
 
             popup.classList.remove('hidden');
             requestAnimationFrame(() => {
@@ -311,32 +446,51 @@
                 content.classList.add('scale-100');
             });
 
+            subtext.innerText = '';
+
             if (type === 'GRANTED') {
-                content.className = 'transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(22,163,74,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-green-600';
+                content.className = 'relative transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(22,163,74,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-green-600';
                 icon.innerText = '✅';
                 text.innerText = 'ACCESS GRANTED';
-                if (navigator.vibrate) navigator.vibrate([100]); 
+                if (hasFoodAccess) {
+                    subtext.innerText = '🍔 FOOD ACCESS INCLUDED';
+                }
+                if (navigator.vibrate) navigator.vibrate([100]);
             } else if (type === 'USED') {
-                content.className = 'transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(234,88,12,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-orange-600';
+                content.className = 'relative transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(234,88,12,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-orange-600';
                 icon.innerText = '⚠️';
                 text.innerText = 'ALREADY USED';
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
             } else {
-                content.className = 'transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(185,28,28,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-red-700';
+                content.className = 'relative transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(185,28,28,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-red-700';
                 icon.innerText = '❌';
                 text.innerText = 'INVALID TICKET';
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
             }
-
-            setTimeout(() => {
-                popup.classList.add('opacity-0');
-                content.classList.remove('scale-100');
-                content.classList.add('scale-90');
-                setTimeout(() => {
-                    popup.classList.add('hidden');
-                }, 300);
-            }, 2000);
         }
+
+        function closePopup() {
+            popupEl.classList.add('opacity-0');
+            popupContentEl.classList.remove('scale-100');
+            popupContentEl.classList.add('scale-90');
+            setTimeout(() => {
+                popupEl.classList.add('hidden');
+            }, 300);
+
+            isProcessing = false;
+            if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) {
+                html5QrCode.resume();
+            }
+        }
+
+        // Close on the X button or by tapping anywhere on the popup
+        popupCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closePopup();
+        });
+        popupEl.addEventListener('click', () => {
+            if (!popupEl.classList.contains('hidden')) closePopup();
+        });
 
         function processScan(decodedText) {
             if(isProcessing) return; 
@@ -356,17 +510,14 @@
                 showPopup('USED');
             } 
             else {
-                usedCodes.add(formattedCode); 
-                showPopup('GRANTED');
+                usedCodes.add(formattedCode);
+                saveUsedCodes();
+                const hasFoodAccess = foodAccessCodes.includes(formattedCode);
+                showPopup('GRANTED', hasFoodAccess);
             }
 
-            // Resume after popup finishes
-            setTimeout(() => {
-                isProcessing = false;
-                if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) {
-                    html5QrCode.resume();
-                }
-            }, 2300);
+            // Popup now stays open until the user taps it or the close button.
+            // Camera resumes inside closePopup().
         }
 
         // START CAMERA LOGIC (CUSTOM)
