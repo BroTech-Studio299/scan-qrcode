@@ -6,395 +6,635 @@
     <title>Glitchless Nights - Ticket Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
     <style>
+        :root {
+            --app-height: 100vh;
+        }
+        
         html, body {
             height: 100%;
             width: 100%;
         }
+        
         body {
-            background-color: #000000;
+            background-color: #030712; /* Deep slate / black */
             color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
             touch-action: manipulation;
-            /* Use dynamic viewport height to avoid mobile browser chrome cutting off content */
-            height: 100dvh;
+            height: var(--app-height);
         }
+        
         main {
-            height: 100dvh;
+            height: var(--app-height);
         }
+
+        /* Refined, more professional glitch effect */
         .glitch-text {
-            text-shadow: 2px 0 0 #ff003c, -2px 0 0 #00e5ff;
+            position: relative;
+            text-shadow: 0.05em 0 0 rgba(255, 0, 60, 0.75), -0.025em -0.05em 0 rgba(0, 229, 255, 0.75),
+                         0.025em 0.05em 0 rgba(0, 255, 0, 0.75);
+            animation: glitch 3s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 rgba(255, 0, 60, 0.75), -0.05em -0.025em 0 rgba(0, 229, 255, 0.75), -0.025em 0.05em 0 rgba(0, 255, 0, 0.75); }
+            14% { text-shadow: 0.05em 0 0 rgba(255, 0, 60, 0.75), -0.05em -0.025em 0 rgba(0, 229, 255, 0.75), -0.025em 0.05em 0 rgba(0, 255, 0, 0.75); }
+            15% { text-shadow: -0.05em -0.025em 0 rgba(255, 0, 60, 0.75), 0.025em 0.025em 0 rgba(0, 229, 255, 0.75), -0.05em -0.05em 0 rgba(0, 255, 0, 0.75); }
+            49% { text-shadow: -0.05em -0.025em 0 rgba(255, 0, 60, 0.75), 0.025em 0.025em 0 rgba(0, 229, 255, 0.75), -0.05em -0.05em 0 rgba(0, 255, 0, 0.75); }
+            50% { text-shadow: 0.025em 0.05em 0 rgba(255, 0, 60, 0.75), 0.05em 0 0 rgba(0, 229, 255, 0.75), 0 -0.05em 0 rgba(0, 255, 0, 0.75); }
+            99% { text-shadow: 0.025em 0.05em 0 rgba(255, 0, 60, 0.75), 0.05em 0 0 rgba(0, 229, 255, 0.75), 0 -0.05em 0 rgba(0, 255, 0, 0.75); }
+            100% { text-shadow: -0.025em 0 0 rgba(255, 0, 60, 0.75), -0.025em -0.025em 0 rgba(0, 229, 255, 0.75), -0.025em -0.05em 0 rgba(0, 255, 0, 0.75); }
         }
 
         header {
             padding-top: max(env(safe-area-inset-top), 1rem);
         }
 
-        /* Clean, custom canvas styling - NO LIBRARY INTERFERENCE */
+        .pb-safe {
+            padding-bottom: max(env(safe-area-inset-bottom), 1.5rem);
+        }
+
+        /* Clean canvas styling */
         #camera-canvas-wrapper {
             position: relative;
             width: 100%;
-            max-width: min(350px, 80vw);
-            /* Cap height so it never forces the page to scroll on short screens */
+            max-width: min(320px, 75vw);
             max-height: 40vh;
-            aspect-ratio: 1 / 1; /* Makes it a perfect square */
-            background-color: #050505;
-            border: 2px solid #333;
-            border-radius: 1rem;
+            aspect-ratio: 1 / 1;
+            background-color: #000;
+            border-radius: 1.5rem;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0 auto;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
         }
 
-        #reader {
-            width: 100%;
-            height: 100%;
-        }
-
+        /* Hide the ugly default HTML5-QRCode UI elements if they pop up */
+        #reader img, #reader span, #reader a { display: none !important; }
+        #reader { border: none !important; width: 100%; height: 100%; }
         #reader video {
             width: 100% !important;
             height: 100% !important;
             object-fit: cover !important;
         }
 
-        /* Manual entry area respects iPhone home-indicator safe area */
-        .pb-safe {
-            padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+        /* Professional Scanner Corner Brackets */
+        .scanner-corner {
+            position: absolute;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-color: #3b82f6; /* Blue-500 */
+            border-style: solid;
+            z-index: 20;
+            opacity: 0.8;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        .corner-tl { top: 1rem; left: 1rem; border-width: 3px 0 0 3px; border-top-left-radius: 0.5rem; }
+        .corner-tr { top: 1rem; right: 1rem; border-width: 3px 3px 0 0; border-top-right-radius: 0.5rem; }
+        .corner-bl { bottom: 1rem; left: 1rem; border-width: 0 0 3px 3px; border-bottom-left-radius: 0.5rem; }
+        .corner-br { bottom: 1rem; right: 1rem; border-width: 0 3px 3px 0; border-bottom-right-radius: 0.5rem; }
+
+        /* Scanner Scanline Animation */
+        .scanline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #3b82f6, transparent);
+            box-shadow: 0 0 10px #3b82f6;
+            animation: scan 2.5s infinite linear;
+            z-index: 15;
+            opacity: 0;
+        }
+        
+        .camera-active .scanline { opacity: 1; }
+
+        @keyframes scan {
+            0% { top: 10%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 90%; opacity: 0; }
         }
 
-        /* Scale text/buttons down on very small / short screens (e.g. SE, landscape) */
+        /* Pulsing Status Dot */
+        .status-dot {
+            height: 8px;
+            width: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Responsive Tweaks */
         @media (max-height: 700px) {
-            #camera-canvas-wrapper {
-                max-height: 32vh;
-            }
-            header h1 {
-                font-size: 1.5rem;
-            }
-            #start-camera-btn {
-                margin-top: 1rem;
-                padding-top: 0.75rem;
-                padding-bottom: 0.75rem;
-            }
+            #camera-canvas-wrapper { max-height: 32vh; }
+            header h1 { font-size: 1.5rem; }
         }
 
         @media (max-height: 560px) {
-            header {
-                padding-top: max(env(safe-area-inset-top), 0.5rem);
-                padding-bottom: 0.5rem;
-            }
-            header p {
-                display: none;
-            }
-            #camera-canvas-wrapper {
-                max-height: 26vh;
-            }
+            header { padding-top: max(env(safe-area-inset-top), 0.5rem); padding-bottom: 0.5rem; }
+            #camera-canvas-wrapper { max-height: 26vh; }
         }
 
-        /* Small phones in width */
-        @media (max-width: 360px) {
-            header h1 {
-                font-size: 1.25rem;
-                letter-spacing: 0.05em;
-            }
-            #start-camera-btn {
-                font-size: 1rem;
-                padding: 0.75rem 1rem;
-            }
-            #manual-code-input, #manual-submit-btn {
-                padding: 0.65rem 0.75rem;
-                font-size: 0.95rem;
-            }
-        }
-
-        #scan-popup-content {
-            width: min(90vw, 24rem);
-        }
-
-        #scan-popup-icon {
-            font-size: clamp(3rem, 12vw, 4.5rem);
-        }
-
-        #scan-popup-text {
-            font-size: clamp(1.25rem, 6vw, 1.875rem);
-        }
+        /* Custom Input styling */
+        input:focus { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
     </style>
 </head>
 
-<body class="w-full flex flex-col items-center m-0 p-0 overflow-hidden bg-black">
+<body class="w-full flex flex-col items-center m-0 p-0 overflow-hidden bg-[#030712]">
 
-    <main class="w-full flex flex-col bg-gray-900 border-0 relative">
+    <main class="w-full max-w-md mx-auto flex flex-col relative bg-gradient-to-b from-slate-900 to-[#030712] shadow-2xl">
 
-        <!-- Header -->
-        <header class="text-center py-3 px-4 bg-gray-900 flex-shrink-0 z-10 shadow-md">
-            <h1 class="text-2xl md:text-4xl font-black uppercase tracking-widest glitch-text mb-1">Scanner</h1>
-            <p class="text-[10px] md:text-xs text-gray-400 font-semibold tracking-wider">GLITCHLESS NIGHTS ENTRY</p>
+        <header class="text-center py-4 px-4 flex-shrink-0 z-10 border-b border-white/5 bg-slate-900/50 backdrop-blur-md">
+            <h1 class="text-2xl md:text-3xl font-black uppercase tracking-[0.2em] glitch-text mb-1 text-white">Scanner</h1>
+            <p class="text-[10px] md:text-xs text-blue-400 font-bold tracking-[0.3em] opacity-80">GLITCHLESS NIGHTS ENTRY</p>
         </header>
 
-        <!-- Status Banner -->
-        <div id="status-banner" class="w-full py-2 px-2 text-center font-bold text-sm tracking-wide bg-gray-800 text-gray-400 flex-shrink-0 z-10">
-            SYSTEM READY
+        <div id="status-banner" class="w-full py-2.5 px-4 flex items-center justify-center gap-2 bg-slate-800/50 border-b border-white/5 flex-shrink-0 z-10">
+            <span class="status-dot"></span>
+            <span class="font-semibold text-xs tracking-widest text-slate-300 uppercase">System Ready</span>
         </div>
 
-        <!-- Camera Section -->
-        <div class="flex-grow flex flex-col items-center justify-center bg-black w-full min-h-0 relative px-4 py-3 overflow-hidden">
+        <div class="flex-grow flex flex-col items-center justify-center w-full min-h-0 relative px-6 py-4 overflow-hidden z-0">
+            
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] aspect-square bg-blue-600/10 blur-[80px] rounded-full pointer-events-none"></div>
 
-            <!-- 1. THE CAMERA CANVAS -->
-            <div id="camera-canvas-wrapper">
+            <div id="camera-canvas-wrapper" class="group">
+                <div class="scanner-corner corner-tl group-hover:border-blue-400"></div>
+                <div class="scanner-corner corner-tr group-hover:border-blue-400"></div>
+                <div class="scanner-corner corner-bl group-hover:border-blue-400"></div>
+                <div class="scanner-corner corner-br group-hover:border-blue-400"></div>
+                
+                <div class="scanline hidden" id="scanline"></div>
+
                 <div id="reader"></div>
-                <!-- Placeholder text before camera starts -->
-                <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 pointer-events-none">
-                    <svg class="w-12 h-12 sm:w-16 sm:h-16 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    <span class="font-bold tracking-widest uppercase text-xs sm:text-sm">Camera Off</span>
+                
+                <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 pointer-events-none bg-slate-950">
+                    <svg class="w-12 h-12 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="font-bold tracking-widest uppercase text-xs">Camera Offline</span>
                 </div>
             </div>
 
-            <!-- 2. THE BUTTON (COMPLETELY SEPARATED AND BELOW THE CANVAS) -->
-            <button id="start-camera-btn" class="mt-6 sm:mt-8 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 sm:py-4 px-8 rounded-xl shadow-lg transition duration-200 w-full max-w-sm active:bg-blue-700 text-base sm:text-lg flex-shrink-0">
-                Request Camera Permissions
+            <button id="start-camera-btn" class="mt-8 relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-3.5 px-8 rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all duration-300 w-full max-w-xs active:scale-95 text-sm uppercase tracking-wider flex-shrink-0 border border-blue-400/30">
+                <span>Activate Scanner</span>
             </button>
-
         </div>
 
-        <!-- Manual Entry Fallback -->
-        <div class="w-full bg-gray-800 border-t border-gray-700 flex flex-col items-center flex-shrink-0 pt-3 sm:pt-4 pb-4 sm:pb-6 px-4 z-10 pb-safe">
-            <p class="text-xs md:text-sm text-gray-400 mb-2 font-semibold uppercase tracking-wider">Manual Entry</p>
-            <div class="flex w-full max-w-sm">
-                <input type="text" id="manual-code-input" class="flex-grow bg-black text-white p-3 md:p-4 rounded-l-xl border border-gray-600 focus:border-blue-500 focus:outline-none font-mono text-base uppercase shadow-inner" placeholder="FR26-12345" inputmode="text" autocapitalize="characters" autocomplete="off">
-                <button id="manual-submit-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 md:py-4 px-6 rounded-r-xl transition duration-200 active:bg-blue-700 shadow-lg">
-                    Verify
+        <div class="w-full bg-slate-900/80 backdrop-blur-md border-t border-white/10 flex flex-col items-center flex-shrink-0 pt-5 pb-safe px-6 z-10">
+            <p class="text-[10px] text-slate-400 mb-3 font-bold uppercase tracking-[0.2em]">Manual Override</p>
+            <div class="flex w-full max-w-sm bg-slate-950 rounded-xl border border-white/10 p-1 shadow-inner focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+                <div class="flex items-center pl-3 text-slate-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                </div>
+                <input type="text" id="manual-code-input" class="flex-grow bg-transparent text-white p-3 border-none focus:outline-none focus:ring-0 font-mono text-base uppercase placeholder-slate-600 tracking-wider" placeholder="FR26-XXXXX" inputmode="text" autocapitalize="characters" autocomplete="off">
+                <button id="manual-submit-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-5 rounded-lg transition duration-200 active:bg-white/30 text-sm tracking-wide">
+                    VERIFY
                 </button>
             </div>
         </div>
 
     </main>
 
-    <!-- FULLSCREEN POP-UP MODAL -->
-    <div id="scan-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none hidden p-4">
-        <div id="scan-popup-content" class="relative transform scale-90 transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px]">
-            <button id="scan-popup-close" aria-label="Close" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white text-xl font-bold flex items-center justify-center leading-none">&times;</button>
-            <div id="scan-popup-icon" class="mb-4 drop-shadow-lg"></div>
-            <h2 id="scan-popup-text" class="font-black uppercase tracking-wider text-white drop-shadow-md leading-tight"></h2>
-            <p id="scan-popup-subtext" class="mt-2 text-sm font-semibold text-white/90 tracking-wide uppercase"></p>
-            <p class="mt-4 text-xs text-white/70 font-medium">Tap anywhere to continue</p>
+    <div id="scan-popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-opacity duration-300 opacity-0 pointer-events-none hidden p-4">
+        <div id="scan-popup-content" class="relative transform scale-90 transition-all duration-400 p-8 rounded-[2rem] shadow-2xl text-center flex flex-col items-center justify-center w-full max-w-sm min-h-[280px] border border-white/20">
+            <button id="scan-popup-close" aria-label="Close" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div id="scan-popup-icon" class="mb-6 drop-shadow-xl"></div>
+            <h2 id="scan-popup-text" class="font-black uppercase tracking-widest text-2xl text-white drop-shadow-md leading-tight mb-1"></h2>
+            <div id="scan-popup-subtext-container" class="hidden mt-3 bg-black/20 rounded-full px-4 py-1.5 border border-white/10">
+                <p id="scan-popup-subtext" class="text-xs font-bold text-white tracking-widest uppercase"></p>
+            </div>
+            <p class="mt-8 text-[11px] text-white/50 font-bold tracking-widest uppercase animate-pulse">Tap to continue</p>
         </div>
     </div>
 
     <script>
         // --- HARDCODED VALID CODES ---
         const validCodes = [
-            "FR26-61503",
-            "FR26-23101",
-            "FR26-62897",
-            "FR26-45986",
-            "FR26-50257",
-            "FR26-71495",
-            "FR26-52875",
-            "FR26-33871",
-            "FR26-35056",
-            "FR26-83575",
-            "FR26-46250",
-            "FR26-94164",
-            "FR26-21284",
-            "FR26-42037",
-            "FR26-54893",
-            "FR26-80794",
-            "FR26-49419",
-            "FR26-83883",
-            "FR26-96539",
-            "FR26-69103",
-            "FR26-50073",
-            "FR26-35973",
-            "FR26-58243",
-            "FR26-11017",
-            "FR26-60880",
-            "FR26-20411",
-            "FR26-53442",
-            "FR26-47215",
-            "FR26-28891",
-            "FR26-28370",
-            "FR26-83019",
-            "FR26-41997",
-            "FR26-16808",
-            "FR26-44057",
-            "FR26-94946",
-            "FR26-41152",
-            "FR26-84752",
-            "FR26-82959",
-            "FR26-48217",
-            "FR26-92909",
-            "FR26-46693",
-            "FR26-90501",
-            "FR26-58279",
-            "FR26-97780",
-            "FR26-85160",
-            "FR26-75706",
-            "FR26-38972",
-            "FR26-98204",
-            "FR26-66368",
-            "FR26-12899",
-            "FR26-92968",
-            "FR26-70918",
-            "FR26-51803",
-            "FR26-54778",
-            "FR26-20850",
-            "FR26-80921",
-            "FR26-95600",
-            "FR26-29121",
-            "FR26-73970",
-            "FR26-70093",
-            "FR26-90702",
-            "FR26-87094",
-            "FR26-86929",
-            "FR26-30877",
-            "FR26-39622",
-            "FR26-70108",
-            "FR26-31691",
-            "FR26-98702",
-            "FR26-28427",
-            "FR26-12234",
-            "FR26-42690",
-            "FR26-26934",
-            "FR26-51510",
-            "FR26-25065",
-            "FR26-42987",
-            "FR26-26524",
-            "FR26-82068",
-            "FR26-44276",
-            "FR26-66989",
-            "FR26-81614",
-            "FR26-33175",
-            "FR26-12461",
-            "FR26-99322",
-            "FR26-79949",
-            "FR26-56909",
-            "FR26-22288",
-            "FR26-86955",
-            "FR26-70354",
-            "FR26-75311",
-            "FR26-43209",
-            "FR26-12373",
-            "FR26-96836",
-            "FR26-56328",
-            "FR26-37688",
-            "FR26-32261",
-            "FR26-71558",
-            "FR26-53690",
-            "FR26-39013",
-            "FR26-11019",
-            "FR26-82874",
+                "FR26-84380",
+                "FR26-44467",
+                "FR26-94857",
+                "FR26-52308",
+                "FR26-80392",
+                "FR26-18546",
+                "FR26-70144",
+                "FR26-43286",
+                "FR26-83537",
+                "FR26-90106",
+                "FR26-75030",
+                "FR26-32006",
+                "FR26-32891",
+                "FR26-34608",
+                "FR26-37960",
+                "FR26-77404",
+                "FR26-98028",
+                "FR26-27585",
+                "FR26-17137",
+                "FR26-53900",
+                "FR26-28535",
+                "FR26-26564",
+                "FR26-25232",
+                "FR26-85972",
+                "FR26-80778",
+                "FR26-45947",
+                "FR26-67504",
+                "FR26-21094",
+                "FR26-61622",
+                "FR26-22129",
+                "FR26-66276",
+                "FR26-28707",
+                "FR26-90620",
+                "FR26-98043",
+                "FR26-13269",
+                "FR26-34853",
+                "FR26-87204",
+                "FR26-39755",
+                "FR26-11290",
+                "FR26-73771",
+                "FR26-51853",
+                "FR26-45755",
+                "FR26-82697",
+                "FR26-49565",
+                "FR26-68270",
+                "FR26-31744",
+                "FR26-78202",
+                "FR26-10783",
+                "FR26-85608",
+                "FR26-77450",
+                "FR26-59799",
+                "FR26-19932",
+                "FR26-68717",
+                "FR26-90295",
+                "FR26-17424",
+                "FR26-80362",
+                "FR26-82159",
+                "FR26-20323",
+                "FR26-97634",
+                "FR26-66693",
+                "FR26-41917",
+                "FR26-83195",
+                "FR26-49388",
+                "FR26-23748",
+                "FR26-35724",
+                "FR26-68978",
+                "FR26-47358",
+                "FR26-73981",
+                "FR26-87651",
+                "FR26-76177",
+                "FR26-76608",
+                "FR26-21296",
+                "FR26-52837",
+                "FR26-60488",
+                "FR26-96947",
+                "FR26-32524",
+                "FR26-22465",
+                "FR26-91305",
+                "FR26-93640",
+                "FR26-51702",
+                "FR26-30515",
+                "FR26-56807",
+                "FR26-35153",
+                "FR26-90565",
+                "FR26-74281",
+                "FR26-54209",
+                "FR26-83647",
+                "FR26-99903",
+                "FR26-50694",
+                "FR26-52815",
+                "FR26-35074",
+                "FR26-20990",
+                "FR26-12322",
+                "FR26-34817",
+                "FR26-37584",
+                "FR26-94129",
+                "FR26-82354",
+                "FR26-22569",
+                "FR26-78203",
+                "FR26-98106",
+                "FR26-50502",
+                "FR26-79930",
+                "FR26-33652",
+                "FR26-42943",
+                "FR26-13709",
+                "FR26-85284",
+                "FR26-60837",
+                "FR26-98623",
+                "FR26-70071",
+                "FR26-93527",
+                "FR26-78980",
+                "FR26-19066",
+                "FR26-91142",
+                "FR26-80327",
+                "FR26-26835",
+                "FR26-71467",
+                "FR26-42531",
+                "FR26-64989",
+                "FR26-72844",
+                "FR26-75996",
+                "FR26-64767",
+                "FR26-79879",
+                "FR26-19756",
+                "FR26-79915",
+                "FR26-35778",
+                "FR26-81979",
+                "FR26-16651",
+                "FR26-27637",
+                "FR26-76127",
+                "FR26-80555",
+                "FR26-60017",
+                "FR26-58125",
+                "FR26-77074",
+                "FR26-47391",
+                "FR26-99850",
+                "FR26-89243",
+                "FR26-63994",
+                "FR26-66798",
+                "FR26-24748",
+                "FR26-71272",
+                "FR26-96354",
+                "FR26-42855",
+                "FR26-14970",
+                "FR26-65903",
+                "FR26-26114",
+                "FR26-99872",
+                "FR26-66964",
+                "FR26-81870",
+                "FR26-89122",
+                "FR26-87563",
+                "FR26-36396",
+                "FR26-53251",
+                "FR26-40959",
+                "FR26-42212",
+                "FR26-47447",
+                "FR26-77329",
+                "FR26-90347",
+                "FR26-70533",
+                "FR26-72933",
+                "FR26-41381",
+                "FR26-35945",
+                "FR26-38956",
+                "FR26-40931",
+                "FR26-92747",
+                "FR26-98285",
+                "FR26-84469",
+                "FR26-76258",
+                "FR26-31890",
+                "FR26-26205",
+                "FR26-76042",
+                "FR26-74634",
+                "FR26-57118",
+                "FR26-78620",
+                "FR26-53601",
+                "FR26-28921",
+                "FR26-72778",
+                "FR26-34125",
+                "FR26-97661",
+                "FR26-46226",
+                "FR26-74181",
+                "FR26-74965",
+                "FR26-59609",
+                "FR26-14519",
+                "FR26-21695",
+                "FR26-61549",
+                "FR26-15072",
+                "FR26-79623",
+                "FR26-92299",
+                "FR26-29670",
+                "FR26-21301",
+                "FR26-17954",
+                "FR26-96565",
+                "FR26-92968",
+                "FR26-77240",
+                "FR26-42705",
+                "FR26-92479",
+                "FR26-81333",
+                "FR26-90622",
+                "FR26-18275",
+                "FR26-28967"
         ];
 
         // --- CODES WITH FOOD / PREMIUM ACCESS ---
         const foodAccessCodes = [
-                "FR26-31147",
-                "FR26-37718",
-                "FR26-10138",
-                "FR26-21186",
-                "FR26-95035",
-                "FR26-21443",
-                "FR26-11467",
-                "FR26-26498",
-                "FR26-87908",
-                "FR26-99410",
-                "FR26-78648",
-                "FR26-64532",
-                "FR26-72258",
-                "FR26-46047",
-                "FR26-92650",
-                "FR26-29846",
-                "FR26-71667",
-                "FR26-87432",
-                "FR26-94840",
-                "FR26-60922",
-                "FR26-43559",
-                "FR26-64579",
-                "FR26-39317",
-                "FR26-37159",
-                "FR26-61520",
-                "FR26-94608",
-                "FR26-96318",
-                "FR26-89492",
-                "FR26-42921",
-                "FR26-88396",
-                "FR26-92211",
-                "FR26-54014",
-                "FR26-30962",
-                "FR26-62508",
-                "FR26-44024",
-                "FR26-42182",
-                "FR26-24790",
-                "FR26-22872",
-                "FR26-76677",
-                "FR26-68245",
-                "FR26-21428",
-                "FR26-90376",
-                "FR26-43453",
-                "FR26-48838",
-                "FR26-99368",
-                "FR26-39149",
-                "FR26-39251",
-                "FR26-87126",
-                "FR26-45256",
-                "FR26-17590",
-                "FR26-10507",
-                "FR26-77431",
-                "FR26-91557",
-                "FR26-99758",
-                "FR26-18306",
-                "FR26-27430",
-                "FR26-67311",
-                "FR26-43258",
-                "FR26-50060",
-                "FR26-25815",
-                "FR26-69468",
-                "FR26-33669",
-                "FR26-18141",
-                "FR26-85769",
-                "FR26-15539",
-                "FR26-76660",
-                "FR26-84449",
-                "FR26-25892",
-                "FR26-93906",
-                "FR26-71848",
-                "FR26-35980",
-                "FR26-81411",
-                "FR26-50432",
-                "FR26-24705",
-                "FR26-74791",
-                "FR26-92910",
-                "FR26-23825",
-                "FR26-78467",
-                "FR26-93296",
-                "FR26-41635",
-                "FR26-81555",
-                "FR26-57280",
-                "FR26-61298",
-                "FR26-40656",
-                "FR26-15634",
-                "FR26-72298",
-                "FR26-75571",
-                "FR26-59432",
-                "FR26-95252",
-                "FR26-49795",
-                "FR26-87039",
-                "FR26-87798",
-                "FR26-60143",
-                "FR26-97097",
-                "FR26-60858",
-                "FR26-55480",
-                "FR26-28947",
-                "FR26-21776",
-                "FR26-69993",
-                "FR26-63967",
+                "FR26-40981",
+                "FR26-20448",
+                "FR26-48908",
+                "FR26-86393",
+                "FR26-99363",
+                "FR26-56524",
+                "FR26-84181",
+                "FR26-72005",
+                "FR26-52481",
+                "FR26-72651",
+                "FR26-91929",
+                "FR26-22222",
+                "FR26-31763",
+                "FR26-31982",
+                "FR26-60887",
+                "FR26-75210",
+                "FR26-29998",
+                "FR26-67748",
+                "FR26-64557",
+                "FR26-87034",
+                "FR26-36344",
+                "FR26-95425",
+                "FR26-41278",
+                "FR26-75075",
+                "FR26-20360",
+                "FR26-87539",
+                "FR26-69759",
+                "FR26-23448",
+                "FR26-43371",
+                "FR26-42640",
+                "FR26-45753",
+                "FR26-13921",
+                "FR26-42772",
+                "FR26-63872",
+                "FR26-91998",
+                "FR26-64857",
+                "FR26-56753",
+                "FR26-30211",
+                "FR26-39581",
+                "FR26-11464",
+                "FR26-60748",
+                "FR26-38960",
+                "FR26-89071",
+                "FR26-58093",
+                "FR26-85366",
+                "FR26-38943",
+                "FR26-14900",
+                "FR26-77959",
+                "FR26-30344",
+                "FR26-71435",
+                "FR26-69175",
+                "FR26-52664",
+                "FR26-66825",
+                "FR26-72080",
+                "FR26-27829",
+                "FR26-92570",
+                "FR26-84443",
+                "FR26-71097",
+                "FR26-35597",
+                "FR26-99295",
+                "FR26-19895",
+                "FR26-17913",
+                "FR26-19434",
+                "FR26-28971",
+                "FR26-48724",
+                "FR26-99997",
+                "FR26-42481",
+                "FR26-37827",
+                "FR26-44081",
+                "FR26-91863",
+                "FR26-88597",
+                "FR26-18996",
+                "FR26-11690",
+                "FR26-88774",
+                "FR26-98602",
+                "FR26-76147",
+                "FR26-66434",
+                "FR26-62015",
+                "FR26-55549",
+                "FR26-90554",
+                "FR26-74627",
+                "FR26-18250",
+                "FR26-21551",
+                "FR26-73848",
+                "FR26-90387",
+                "FR26-45035",
+                "FR26-92877",
+                "FR26-39629",
+                "FR26-79463",
+                "FR26-53924",
+                "FR26-97985",
+                "FR26-41146",
+                "FR26-64244",
+                "FR26-54529",
+                "FR26-82719",
+                "FR26-67215",
+                "FR26-10525",
+                "FR26-20555",
+                "FR26-86407",
+                "FR26-35956",
+                "FR26-65351",
+                "FR26-10062",
+                "FR26-29177",
+                "FR26-73450",
+                "FR26-60491",
+                "FR26-27487",
+                "FR26-59874",
+                "FR26-16194",
+                "FR26-67033",
+                "FR26-97647",
+                "FR26-21692",
+                "FR26-80707",
+                "FR26-74847",
+                "FR26-84703",
+                "FR26-44887",
+                "FR26-24120",
+                "FR26-80086",
+                "FR26-85687",
+                "FR26-89889",
+                "FR26-33613",
+                "FR26-22551",
+                "FR26-62121",
+                "FR26-85666",
+                "FR26-48757",
+                "FR26-14658",
+                "FR26-44251",
+                "FR26-26995",
+                "FR26-86754",
+                "FR26-66630",
+                "FR26-10704",
+                "FR26-33584",
+                "FR26-61248",
+                "FR26-52409",
+                "FR26-72136",
+                "FR26-23014",
+                "FR26-85918",
+                "FR26-92392",
+                "FR26-66565",
+                "FR26-25135",
+                "FR26-12481",
+                "FR26-20146",
+                "FR26-68162",
+                "FR26-70695",
+                "FR26-59898",
+                "FR26-43923",
+                "FR26-89232",
+                "FR26-30307",
+                "FR26-78466",
+                "FR26-41213",
+                "FR26-73153",
+                "FR26-62379",
+                "FR26-45540",
+                "FR26-82910",
+                "FR26-27564",
+                "FR26-46832",
+                "FR26-60246",
+                "FR26-83525",
+                "FR26-82975",
+                "FR26-77146",
+                "FR26-89163",
+                "FR26-14317",
+                "FR26-62294",
+                "FR26-72326",
+                "FR26-17995",
+                "FR26-13398",
+                "FR26-31332",
+                "FR26-40513",
+                "FR26-11929",
+                "FR26-43393",
+                "FR26-75041",
+                "FR26-13217",
+                "FR26-97895",
+                "FR26-43023",
+                "FR26-20865",
+                "FR26-97421",
+                "FR26-42361",
+                "FR26-60076",
+                "FR26-11827",
+                "FR26-73741",
+                "FR26-10656",
+                "FR26-82788",
+                "FR26-53094",
+                "FR26-29459",
+                "FR26-85038",
+                "FR26-49519",
+                "FR26-55691",
+                "FR26-21768",
+                "FR26-75071",
+                "FR26-90301",
+                "FR26-11445",
+                "FR26-21095",
+                "FR26-45312",
+                "FR26-16784",
+                "FR26-16956",
+                "FR26-15750",
+                "FR26-44967",
+                "FR26-69777",
+                "FR26-96992",
+                "FR26-87952",
+                "FR26-66429",
         ];
 
-        // --- PERSISTED "ALREADY USED" LIST (survives page refresh) ---
+        // --- PERSISTED "ALREADY USED" LIST ---
         const STORAGE_KEY = 'glitchless_used_codes';
 
         function loadUsedCodes() {
@@ -402,7 +642,7 @@
                 const raw = localStorage.getItem(STORAGE_KEY);
                 return raw ? new Set(JSON.parse(raw)) : new Set();
             } catch (e) {
-                console.error('Could not read used codes from storage', e);
+                console.error('Could not read used codes', e);
                 return new Set();
             }
         }
@@ -411,29 +651,39 @@
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(usedCodes)));
             } catch (e) {
-                console.error('Could not save used codes to storage', e);
+                console.error('Could not save used codes', e);
             }
         }
 
         let usedCodes = loadUsedCodes();
-        let html5QrCode = null; // Using the core engine now
-        let isProcessing = false; // true while a popup is open and waiting to be dismissed
+        let html5QrCode = null; 
+        let isProcessing = false; 
 
         const manualCodeInput = document.getElementById('manual-code-input');
         const manualSubmitBtn = document.getElementById('manual-submit-btn');
         const startCameraBtn = document.getElementById('start-camera-btn');
         const cameraPlaceholder = document.getElementById('camera-placeholder');
+        const scanline = document.getElementById('scanline');
+        const cameraCanvasWrapper = document.getElementById('camera-canvas-wrapper');
 
-        // POP-UP LOGIC (stays open until the user dismisses it)
+        // POP-UP DOM
         const popupEl = document.getElementById('scan-popup');
         const popupContentEl = document.getElementById('scan-popup-content');
         const popupCloseBtn = document.getElementById('scan-popup-close');
+        
+        // SVG ICONS FOR POPUPS
+        const ICONS = {
+            GRANTED: `<svg class="w-24 h-24 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+            USED: `<svg class="w-24 h-24 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`,
+            INVALID: `<svg class="w-24 h-24 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+        };
 
         function showPopup(type, hasFoodAccess) {
             const popup = popupEl;
             const content = popupContentEl;
             const icon = document.getElementById('scan-popup-icon');
             const text = document.getElementById('scan-popup-text');
+            const subtextContainer = document.getElementById('scan-popup-subtext-container');
             const subtext = document.getElementById('scan-popup-subtext');
 
             popup.classList.remove('hidden');
@@ -444,24 +694,26 @@
                 content.classList.add('scale-100');
             });
 
-            subtext.innerText = '';
+            subtextContainer.classList.add('hidden');
 
+            // Set styling based on type
             if (type === 'GRANTED') {
-                content.className = 'relative transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(22,163,74,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-green-600';
-                icon.innerText = '✅';
+                content.className = 'relative transform transition-all duration-400 p-8 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(16,185,129,0.8)] text-center flex flex-col items-center justify-center w-full max-w-sm min-h-[280px] bg-gradient-to-br from-emerald-500 to-green-700 border border-green-400/50';
+                icon.innerHTML = ICONS.GRANTED;
                 text.innerText = 'ACCESS GRANTED';
                 if (hasFoodAccess) {
-                    subtext.innerText = '🍔 FOOD ACCESS INCLUDED';
+                    subtextContainer.classList.remove('hidden');
+                    subtext.innerText = '🍔 FOOD ACCESS';
                 }
                 if (navigator.vibrate) navigator.vibrate([100]);
             } else if (type === 'USED') {
-                content.className = 'relative transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(234,88,12,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-orange-600';
-                icon.innerText = '⚠️';
+                content.className = 'relative transform transition-all duration-400 p-8 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(245,158,11,0.8)] text-center flex flex-col items-center justify-center w-full max-w-sm min-h-[280px] bg-gradient-to-br from-amber-500 to-orange-700 border border-orange-400/50';
+                icon.innerHTML = ICONS.USED;
                 text.innerText = 'ALREADY USED';
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
             } else {
-                content.className = 'relative transform transition-transform duration-300 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(185,28,28,0.6)] text-center flex flex-col items-center justify-center w-10/12 max-w-sm min-h-[220px] sm:min-h-[250px] bg-red-700';
-                icon.innerText = '❌';
+                content.className = 'relative transform transition-all duration-400 p-8 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(225,29,72,0.8)] text-center flex flex-col items-center justify-center w-full max-w-sm min-h-[280px] bg-gradient-to-br from-rose-600 to-red-800 border border-red-400/50';
+                icon.innerHTML = ICONS.INVALID;
                 text.innerText = 'INVALID TICKET';
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
             }
@@ -482,7 +734,6 @@
             }
         }
 
-        // Close on the X button or by tapping anywhere on the popup
         popupCloseBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             closePopup();
@@ -495,7 +746,6 @@
             if(isProcessing) return; 
             isProcessing = true;
             
-            // Pause the camera feed while showing the popup
             if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.SCANNING) {
                 html5QrCode.pause(true);
             }
@@ -515,20 +765,17 @@
                 const hasFoodAccess = foodAccessCodes.includes(formattedCode);
                 showPopup('GRANTED', hasFoodAccess);
             }
-
-            // Popup now stays open until the user taps it or the close button.
-            // Camera resumes inside closePopup().
         }
 
-        // START CAMERA LOGIC (CUSTOM)
+        // START CAMERA
         startCameraBtn.addEventListener('click', () => {
-            startCameraBtn.innerText = "Starting Camera...";
+            startCameraBtn.innerHTML = `<span class="animate-pulse">Initializing...</span>`;
             startCameraBtn.disabled = true;
 
             html5QrCode = new Html5Qrcode("reader");
 
             html5QrCode.start(
-                { facingMode: "environment" }, // Force back camera
+                { facingMode: "environment" },
                 {
                     fps: 10,
                     qrbox: function(viewfinderWidth, viewfinderHeight) {
@@ -541,21 +788,20 @@
                 (decodedText) => {
                     processScan(decodedText);
                 },
-                (errorMessage) => {
-                    // Ignore background scan errors
-                }
+                (errorMessage) => {}
             ).then(() => {
-                // If camera starts successfully, hide the button and placeholder
                 startCameraBtn.classList.add('hidden');
                 cameraPlaceholder.classList.add('hidden');
+                scanline.classList.remove('hidden');
+                cameraCanvasWrapper.classList.add('camera-active');
             }).catch((err) => {
                 alert("Camera access denied or failed to start.");
-                startCameraBtn.innerText = "Request Camera Permissions";
+                startCameraBtn.innerHTML = "<span>Activate Scanner</span>";
                 startCameraBtn.disabled = false;
             });
         });
 
-        // MANUAL ENTRY LOGIC
+        // MANUAL ENTRY
         function handleManualSubmit() {
             const code = manualCodeInput.value;
             if (code.trim() !== '') {
@@ -572,9 +818,9 @@
             }
         });
 
-        // Keep layout correct when mobile browser chrome shows/hides (address bar etc.)
+        // Dynamic Viewport Height for mobile browsers
         function setViewportHeightVar() {
-            document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
+            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
         }
         setViewportHeightVar();
         window.addEventListener('resize', setViewportHeightVar);
